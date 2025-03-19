@@ -1,10 +1,13 @@
 from flask import Flask, jsonify, render_template
 from flask_socketio import SocketIO, emit
-import gpt4free  # Ensure you are using the correct gpt4free package
+from g4f.client import Client  # Import Client from g4f
 
 # Initialize Flask app and SocketIO
 app = Flask(__name__)
 socketio = SocketIO(app)
+
+# Initialize g4f client
+client = Client()
 
 # List of products
 products = [
@@ -25,23 +28,26 @@ def get_products():
 def get_recommendations():
     return jsonify(products[:2])
 
-# Chatbot endpoint using gpt4free
+# Chatbot endpoint using g4f client
 @socketio.on('message')
 def handle_message(message):
     try:
-        # Initialize the GPT-4 client from gpt4free
-        client = gpt4free.Client()
+        # Use g4f client to get a response
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",  # Using gpt-4o-mini as specified
+            messages=[{"role": "user", "content": message}],
+            web_search=False  # Set web_search to False for a simple chat response
+        )
+        
+        # Extract the chatbot's response from the API response
+        answer = response.choices[0].message.content
 
-        # Use the gpt4free client to get a response (adjust this as per gpt4free API usage)
-        response = client.chat(message)
-
-        # Extract the chatbot's response
-        answer = response['choices'][0]['message']['content']
-
-        # Emit the response back to the client
+        # Emit the response back to the client (frontend)
         emit('response', {'message': answer})
+
     except Exception as e:
         emit('response', {'message': f"Error: {str(e)}"})
 
 if __name__ == '__main__':
     socketio.run(app, debug=True)
+
