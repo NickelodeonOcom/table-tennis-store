@@ -1,6 +1,6 @@
 from flask import Flask, jsonify, render_template
 from flask_socketio import SocketIO, emit
-import gpt4free
+from g4f.client import Client
 
 # Initialize Flask app and SocketIO
 app = Flask(__name__)
